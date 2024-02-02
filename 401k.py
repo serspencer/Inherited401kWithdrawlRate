@@ -90,6 +90,13 @@ def main():
     parser.add_argument('--hysa_rate', type=float, required=True, help='Annual interest rate of the HYSA.')
     parser.add_argument('--annual_income', type=float, required=True, help='Annual income of the individual.')
     parser.add_argument('--total_years', type=int, required=True, help='Total length of time in years for the whole process.')
+    parser.add_argument('--filing_status', type=int, required=True, help='\
+                        1 --> Single\
+                        2 --> Married Jointly\
+                        3 --> Married Separately\
+                        4 --> Head of Household\
+                        ')
+    
     args = parser.parse_args()
 
     initial_401k_balance = args.initial_balance
