@@ -135,11 +135,11 @@ def determinTaxBracket(taxStatus) :
 
 def main():
     parser = argparse.ArgumentParser(description='Calculate 401k withdrawal and HYSA reinvestment.')
-    parser.add_argument('-ib', '--initial_balance', type=float, required=True, help='Initial balance of the 401k.')
-    parser.add_argument('-pr', '--growth_rate_401k', type=float, required=True, help='Annual growth rate of the 401k.')
-    parser.add_argument('-sr', '--hysa_rate', type=float, required=False, default=0, help='Annual interest rate of the HYSA.')
-    parser.add_argument('-ai', '--annual_income', type=float, required=True, help='Annual income of the individual.')
-    parser.add_argument('-t', '--total_years',  type=int, required=True, help='Total length of time in years for the whole process.')
+    parser.add_argument('-ib', '--initialBalance', type=float, required=True, help='Initial balance of the 401k.')
+    parser.add_argument('-kr', '--growthRateK', type=float, required=True, help='Annual growth rate of the 401k.')
+    parser.add_argument('-sr', '--growthRateS', type=float, required=False, default=0, help='Annual interest rate of the HYSA.')
+    parser.add_argument('-ai', '--annualIncome', type=float, required=True, help='Annual income of the individual.')
+    parser.add_argument('-t', '--totalYears',  type=int, required=True, help='Total length of time in years for the whole process.')
     parser.add_argument('-fs', '--filing_status', type=int, required=False, default=1, help='\
                         1 --> Single\
                         2 --> Married Jointly\
@@ -149,11 +149,11 @@ def main():
     
     args = parser.parse_args()
 
-    initial_401k_balance = args.initial_balance
-    annual_growth_rate = args.growth_rate_401k
-    hysa_interest_rate = args.hysa_rate
-    annual_income = args.annual_income
-    totalYears = args.total_years 
+    initial_401k_balance = args.initialBalance
+    annual_growth_rate = args.growthRateK
+    hysa_interest_rate = args.growthRateS
+    annual_income = args.annualIncome
+    totalYears = args.totalYears 
     tax_brackets = determinTaxBracket(args.filing_status)
     
 
