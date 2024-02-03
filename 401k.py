@@ -18,70 +18,90 @@ def format_currency(amount):
     return f"${amount:,.2f}"
 
 # Function to calculate the scenario for different withdrawal periods n (1-7)
-def calculate_varied_withdrawal_scenario(total_years, initial_balance, growthRateK, growthRateSecondaryAccount, annualIncome, tax_brackets):
+def calculate_varied_withdrawal_scenario(total_years, initial_balance, growthRateK, secondaryAcctInitBalance, growthRateSecondaryAccount, annualIncome, taxBracket):
     year_scenarios = []
     min_tax_paid = float('inf')
     min_tax_year = 0
+    maxSecondaryAcctValue = 0
+    maxSecondaryAcctYear = 0
     
     
     for n in range(1, total_years + 1):
-        kBalance = initial_balance
+        kBalance = initial_balance                  # kBalance is 401k Balance
         totalTaxPaid = 0
-        hysaBalance = 0
+        notWithdrawnTax = 0
+        hysaBalance = secondaryAcctInitBalance      # hysaBalance needs to be renamed to secondary account balance
         intermediate_calculations = []
         withdrawlsLeft = n
 
+        # print(f'Year {n} scenario')
+        # print(f'\tHYSA Starting Balance {hysaBalance}')
         # Loop through Differnt Withdrawl Rates
         for year in range(total_years):
 
+            # print(f'\tYear {year} of {n}')
             # Compound Interest for Both Accounts
             kBalance *= (1 + growthRateK)
-            hysaIncome = (hysaBalance * ((1 + growthRateSecondaryAccount / 365) ** (1 * 365)) - hysaBalance)
-            # print(f'\tHYSA Income: {format_currency(hysaIncome)}')
-            hysaBalance += hysaIncome
+            balanceAfterOneYear = (hysaBalance * ((1 + (growthRateSecondaryAccount / 365)) ** 365))
+            # print(f'\t\tBalance After Compounding: {balanceAfterOneYear}')
+            hysaIncome = balanceAfterOneYear - hysaBalance
+            # print(f'\t\tHYSA Income: {format_currency(hysaIncome)}')
+            hysaBalance = balanceAfterOneYear
 
             # Withdrawl from 401k Based on n
             if(withdrawlsLeft != 0) :
                 annualWithdrawlK = kBalance / withdrawlsLeft
                 kBalance -= annualWithdrawlK
                 withdrawlsLeft -= 1
+
                 # Calculate Estimated Tax from Withdrawn 401k Balance and Secondary Account Interest as income plus standard income
                 taxedIncome = annualIncome + hysaIncome + annualWithdrawlK
-                estimatedTaxOnIncome = calculate_federal_tax(taxedIncome, tax_brackets)
+                estimatedTaxOnIncome = calculate_federal_tax(taxedIncome, taxBracket)
                 totalTaxPaid += estimatedTaxOnIncome
-                # Deduct the amount paid in taxes from the withdrawn amount
+
+                # Deduct the amount paid in taxes for overall income from the withdrawn amount
                 postTaxWithdrawl = annualWithdrawlK - estimatedTaxOnIncome
+
                 # Add that difference to the HYSA or Secondary Account
                 hysaBalance += postTaxWithdrawl
             else :
+                # No Taxes being deducted
                 taxedIncome = annualIncome + hysaIncome
-                estimatedTaxOnIncome = calculate_federal_tax(taxedIncome, tax_brackets)
+                estimatedTaxOnIncome = calculate_federal_tax(taxedIncome, taxBracket)
+                notWithdrawnTax += estimatedTaxOnIncome
                 totalTaxPaid += estimatedTaxOnIncome
+                hysaBalance -= notWithdrawnTax
+
             
-
-
-
             intermediate_calculations.append({
                 'Year': year + 1,
                 '401k Balance': kBalance,
                 'Estimated Tax': estimatedTaxOnIncome,
                 'Total Tax Paid': totalTaxPaid,
-                'HYSA Balance': hysaBalance
+                'HYSA Balance': hysaBalance - notWithdrawnTax
             })
 
-        year_scenarios.append({
-            'Year': n,
-            'Final HYSA Balance': format_currency(hysaBalance),
-            'Total Tax Paid': format_currency(totalTaxPaid),
-            'Intermediate Calculations': intermediate_calculations
-        })
-
+        # print(f'\tNot paid tax total: {format_currency(notWithdrawnTax)}')
         # Check and update the year with the lowest tax paid
         if totalTaxPaid < min_tax_paid:
             min_tax_paid = totalTaxPaid
             min_tax_year = n
+
+        # Check and update the year with the lowest tax paid
+        if hysaBalance > maxSecondaryAcctValue:
+            maxSecondaryAcctValue = hysaBalance
+            maxSecondaryAcctYear = n
+        
+        year_scenarios.append({
+            'Year': n,
+            'Final HYSA Balance': format_currency(hysaBalance),
+            'Total Tax Paid': format_currency(totalTaxPaid),
+            'Net Gain': format_currency(hysaBalance - initial_balance - secondaryAcctInitBalance),
+            'Intermediate Calculations': intermediate_calculations
+        })
     
-    return year_scenarios, min_tax_year
+    return year_scenarios, min_tax_year, maxSecondaryAcctYear
+
 def determinTaxBracket(taxStatus) :
 
     taxBrackets = [None, None, None, None]
@@ -135,9 +155,10 @@ def determinTaxBracket(taxStatus) :
 
 def main():
     parser = argparse.ArgumentParser(description='Calculate 401k withdrawal and HYSA reinvestment.')
-    parser.add_argument('-ib', '--initialBalance', type=float, required=True, help='Initial balance of the 401k.')
-    parser.add_argument('-kr', '--growthRateK', type=float, required=True, help='Annual growth rate of the 401k.')
-    parser.add_argument('-sr', '--growthRateS', type=float, required=False, default=0, help='Annual interest rate of the HYSA.')
+    parser.add_argument('-ib', '--kInitialBalance', type=float, required=True, help='Initial balance of the 401k.')
+    parser.add_argument('-kr', '--kGrowthRate', type=float, required=True, help='Annual growth rate of the 401k.')
+    parser.add_argument('-sb', '--sInitialBalance', type=float, required=False, default=0, help='Initial balance of the Secondary Account.')
+    parser.add_argument('-sr', '--sGrowthRate', type=float, required=False, default=0, help='Annual interest rate of the Secondary Account.')
     parser.add_argument('-ai', '--annualIncome', type=float, required=True, help='Annual income of the individual.')
     parser.add_argument('-t', '--totalYears',  type=int, required=True, help='Total length of time in years for the whole process.')
     parser.add_argument('-fs', '--filing_status', type=int, required=False, default=1, help='\
@@ -149,22 +170,32 @@ def main():
     
     args = parser.parse_args()
 
-    initial_401k_balance = args.initialBalance
-    annual_growth_rate = args.growthRateK
-    hysa_interest_rate = args.growthRateS
+    initial_401k_balance = args.kInitialBalance
+    secondaryAcctInitBalance = args.sInitialBalance
+    annual_growth_rate = args.kGrowthRate
+    hysa_interest_rate = args.sGrowthRate
     annual_income = args.annualIncome
     totalYears = args.totalYears 
-    tax_brackets = determinTaxBracket(args.filing_status)
+    taxBracket = determinTaxBracket(args.filing_status)
     
 
-    scenarios, minTaxYear = calculate_varied_withdrawal_scenario(totalYears, initial_401k_balance, annual_growth_rate, hysa_interest_rate, annual_income, tax_brackets)
+    scenarios, minTaxYear, maxSecondaryYear = calculate_varied_withdrawal_scenario(totalYears, initial_401k_balance, annual_growth_rate, secondaryAcctInitBalance, hysa_interest_rate, annual_income, taxBracket)
     
-    # Regular Output
+    # Less Taxes Piad
     min_tax_scenario = scenarios[minTaxYear - 1]
     print(f"\nYear with the lowest tax paid: {min_tax_scenario['Year']}")
-    print(f"  Final HYSA Balance = {min_tax_scenario['Final HYSA Balance']}\n  Total Tax Paid in {totalYears} year span = {min_tax_scenario['Total Tax Paid']}")
+    print(f"  Final HYSA Balance = {min_tax_scenario['Final HYSA Balance']}\
+          \n  Total Tax Paid in {totalYears} year span = {min_tax_scenario['Total Tax Paid']}")
+        #   \n  Net Gain {min_tax_scenario['Net Gain']}")
 
-    # Print out Intermediate Calculations for Each Yar.  Useful for Troubleshooting
+    # More money in your pocket
+    maxSecondaryAcctScenario = scenarios[maxSecondaryYear - 1]
+    print(f"\nYear with highest Secondary Account Value: {maxSecondaryAcctScenario['Year']}")
+    print(f"  Final HYSA Balance = {maxSecondaryAcctScenario['Final HYSA Balance']}\
+          \n  Total Tax Paid in {totalYears} year span = {maxSecondaryAcctScenario['Total Tax Paid']}")
+        #   \n  Net Gain {maxSecondaryAcctScenario['Net Gain']}")
+
+    # # Print out Intermediate Calculations for Each Yar.  Useful for Troubleshooting
     # if minTaxYear - 1 < len(scenarios):
     #     for scenario in scenarios:
     #         print(f"\nIntermediate Calculations for {scenario['Year']}-Year Scenario:")
