@@ -1,0 +1,3 @@
+Python Virtual Environment "webServer"
+django Project "mysite"
+django app "kTransfer"
