@@ -1,3 +1,4 @@
 Python Virtual Environment "webServer"
+    webServer\Scripts\activate
 django Project "mysite"
 django app "kTransfer"

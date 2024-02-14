@@ -1,0 +1,17 @@
+<!-- myapp/templates/myapp/results.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Calculation Results</title>
+</head>
+<body>
+    <h1>Results</h1>
+    <div>
+        <p>Final HYSA Balance: {{ results.final_hysa_balance }}</p>
+        <p>Total Tax Paid: {{ results.total_tax_paid }}</p>
+        <!-- Display more results as needed -->
+    </div>
+    <a href="{% url 'input_form' %}">Go Back</a>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<!-- myapp/templates/myapp/input_form.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Calculation Form</title>
+</head>
+<body>
+    <h1>Calculation Input</h1>
+    <form method="post" action="">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>
