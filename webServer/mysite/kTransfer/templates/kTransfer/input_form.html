@@ -1,0 +1,105 @@
+{% extends 'kTransfer/base.html' %}
+
+{% block title %}Calculate Your 401(k) Withdrawal Strategy{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7 col-xl-6">
+
+    <div class="card p-4 p-md-5">
+      <h1 class="h3 mb-1">Withdrawal Strategy Calculator</h1>
+      <p class="text-muted mb-4">
+        Find the optimal timeline to withdraw your inherited 401(k) and
+        minimise the taxes you pay along the way.
+      </p>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <!-- 401(k) section -->
+        <p class="section-label text-primary mt-2 mb-3">401(k) Details</p>
+        <div class="row g-3 mb-2">
+          <div class="col-sm-6">
+            <label class="form-label fw-semibold" for="id_k_initial_balance">
+              {{ form.k_initial_balance.label }}
+            </label>
+            {{ form.k_initial_balance }}
+            {% if form.k_initial_balance.errors %}
+              <div class="text-danger small mt-1">{{ form.k_initial_balance.errors.0 }}</div>
+            {% endif %}
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label fw-semibold" for="id_k_growth_rate">
+              {{ form.k_growth_rate.label }}
+            </label>
+            {{ form.k_growth_rate }}
+            {% if form.k_growth_rate.errors %}
+              <div class="text-danger small mt-1">{{ form.k_growth_rate.errors.0 }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Secondary account section -->
+        <p class="section-label text-primary mt-4 mb-1">Secondary Account
+          <span class="text-muted fw-normal text-lowercase" style="font-size:0.8rem">(optional)</span>
+        </p>
+        <p class="text-muted small mb-3">{{ form.secondary_init_balance.help_text }}</p>
+        <div class="row g-3 mb-2">
+          <div class="col-sm-6">
+            <label class="form-label fw-semibold" for="id_secondary_init_balance">
+              {{ form.secondary_init_balance.label }}
+            </label>
+            {{ form.secondary_init_balance }}
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label fw-semibold" for="id_secondary_growth_rate">
+              {{ form.secondary_growth_rate.label }}
+            </label>
+            {{ form.secondary_growth_rate }}
+            <div class="form-text">{{ form.secondary_growth_rate.help_text }}</div>
+          </div>
+        </div>
+
+        <!-- Personal info section -->
+        <p class="section-label text-primary mt-4 mb-3">Your Situation</p>
+        <div class="row g-3 mb-2">
+          <div class="col-sm-6">
+            <label class="form-label fw-semibold" for="id_annual_income">
+              {{ form.annual_income.label }}
+            </label>
+            {{ form.annual_income }}
+            <div class="form-text">{{ form.annual_income.help_text }}</div>
+            {% if form.annual_income.errors %}
+              <div class="text-danger small mt-1">{{ form.annual_income.errors.0 }}</div>
+            {% endif %}
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label fw-semibold" for="id_total_years">
+              {{ form.total_years.label }}
+            </label>
+            {{ form.total_years }}
+            <div class="form-text">{{ form.total_years.help_text }}</div>
+            {% if form.total_years.errors %}
+              <div class="text-danger small mt-1">{{ form.total_years.errors.0 }}</div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="form-label fw-semibold" for="id_filing_status">
+            {{ form.filing_status.label }}
+          </label>
+          {{ form.filing_status }}
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg w-100">Calculate</button>
+      </form>
+
+      <p class="text-muted text-center mt-3" style="font-size:0.75rem">
+        Tax figures use 2024 federal brackets and standard deductions.
+        This tool is for estimation purposes only &mdash; consult a tax professional for advice.
+      </p>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
